@@ -1,29 +1,26 @@
-#Import de libs pertinentes
-from datetime import datetime
-from util import db_connection
-import pandas as pd
+import time
 import traceback
+import extract
+import transform
+import load
+from util.sql_helpers import SchemaConnection,  connection_handler, create_etl_process
 
-#Extraccion
-from extract.extract_channels import ext_channels
-from extract.extract_countries import ext_countries
-from extract.extract_products import ext_products
-from extract.extract_customers import ext_customers
-from extract.extract_promotions import ext_promotions
-from extract.extract_sales import ext_sales
-from extract.extract_times import ext_times
-
+@connection_handler
+def main(schema_con: SchemaConnection):
+    start = time.time()
+    process_id = create_etl_process(schema_con.STG)
+    print(f'ETL process N°{process_id}')
+    print('Extracting data...')
+    extract.extract(schema_con.STG)
+    print('Transforming data...')
+    transform.transform(schema_con.STG, process_id)
+    print('Loading data...')
+    load.load(schema_con, process_id)
+    end = time.time()
+    print(f'ETL process finished in {end - start:.4f} seconds')
 
 try:
-    ext_channels()
-    ext_countries()
-    ext_customers()
-    ext_products()
-    ext_promotions()
-    ext_sales()
-    ext_times()
-    
+    main()
 except:
+    print("An error occurred while running the ETL process:")
     traceback.print_exc()
-finally:
-    pass
